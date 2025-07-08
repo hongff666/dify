@@ -1,8 +1,9 @@
+name: dify
+
 services:
   # The postgres database.
   db:
     image: postgres:15-alpine
-    restart: always
     env_file:
       - ./middleware.env
     environment:
@@ -28,7 +29,6 @@ services:
   # The redis cache.
   redis:
     image: redis:6-alpine
-    restart: always
     env_file:
       - ./middleware.env
     environment:
@@ -46,7 +46,6 @@ services:
   # The DifySandbox
   sandbox:
     image: langgenius/dify-sandbox:0.2.12
-    restart: always
     env_file:
       - ./middleware.env
     environment:
@@ -72,7 +71,6 @@ services:
   # plugin daemon
   plugin_daemon:
     image: langgenius/dify-plugin-daemon:0.1.2-local
-    restart: always
     env_file:
       - ./middleware.env
     environment:
@@ -131,13 +129,17 @@ services:
       - "${EXPOSE_PLUGIN_DEBUGGING_PORT:-5003}:${PLUGIN_DEBUGGING_PORT:-5003}"
     volumes:
       - ./volumes/plugin_daemon:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   # ssrf_proxy server
   # for more information, please refer to
   # https://docs.dify.ai/learn-more/faq/install-faq#18-why-is-ssrf-proxy-needed%3F
   ssrf_proxy:
     image: ubuntu/squid:latest
-    restart: always
     volumes:
       - ./ssrf_proxy/squid.conf.template:/etc/squid/squid.conf.template
       - ./ssrf_proxy/docker-entrypoint.sh:/docker-entrypoint-mount.sh
@@ -164,7 +166,6 @@ services:
     profiles:
       - ""
       - weaviate
-    restart: always
     volumes:
       # Mount the Weaviate data directory to the container.
       - ${WEAVIATE_HOST_VOLUME:-./volumes/weaviate}:/var/lib/weaviate
